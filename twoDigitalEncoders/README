@@ -38,8 +38,14 @@ Here it is plugged on a breadboard
 	      |    |
 	     BTN  GND
 	 
+Rotary Encoder1
 A   : Link to Digital8
 B   : Link to Digital9
 BTN : Link to Digital2
+
+Rotary Encoder2
+A   : Link to Digital10
+B   : Link to Digital11
+BTN : Link to Digital3
 
 
