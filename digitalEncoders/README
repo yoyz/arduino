@@ -1,0 +1,41 @@
+README
+------
+
+2017/04/30
+
+You see this on serial : 
+Encoder Value: 14
+Encoder Value: 15
+Encoder Value: 16
+Encoder Value: 15
+Button: ClickEncoder::Clicked
+Button: ClickEncoder::Clicked
+Button: ClickEncoder::Held
+Button: ClickEncoder::Held
+Button: ClickEncoder::Released
+Button: ClickEncoder::Clicked
+
+Schematics
+----------
+
+Here it is plugged on a breadboard
+
+            A  GND  B
+            |   |   |
+        +---+---+---+---+
+       	|               |
+       	|               |
+       	|    ROTARY     |
+       	|     ENCODER   |
+       	|               |
+        |   POT is up   |
+        | PIN goes down |
+	+-----+----+----+
+	      |    |
+	     BTN  GND
+	 
+A   : Link to Digital8
+B   : Link to Digital9
+BTN : Link to Digital2
+
+
