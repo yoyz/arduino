@@ -1,0 +1,7 @@
+Treillis	ArduinoUno
+--------        ----------
+SDA		Analog4
+SCL		Analog5
+GND		GND
+5V		5V
+Init		Analog2
