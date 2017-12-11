@@ -1,0 +1,67 @@
+README
+------
+
+Based on 	: https://github.com/0xPIT/
+Upgrade with 	: https://github.com/0xPIT/encoder/issues/10
+To           	: https://github.com/soligen2010/encoder
+
+2017/12/11
+
+You see this on serial : 
+Encoder Value: 14
+Encoder Value: 15
+Encoder Value: 16
+Encoder Value: 15
+Button: ClickEncoder::Clicked
+Button: ClickEncoder::Clicked
+Button: ClickEncoder::Held
+Button: ClickEncoder::Held
+Button: ClickEncoder::Released
+Button: ClickEncoder::Clicked
+
+Schematics
+----------
+
+Here it is plugged on a breadboard
+
+            A  GND  B
+            |   |   |
+        +---+---+---+---+
+       	|               |
+       	|               |
+       	|    ROTARY     |
+       	|     ENCODER   |
+       	|               |
+        |   POT is up   |
+        | PIN goes down |
+	+-----+----+----+
+	      |    |
+	     BTN  GND
+	 
+
+
+
+
+
+Rotary Encoder1 ArduinoUno
+--------------- --------
+A             	Digital8
+B               Digital9
+BTN             Digital2
+
+Rotary Encoder2 ArduinoUno
+--------------- ---------
+A             	Digital10
+B             	Digital11
+BTN         	Digital3
+
+
+
+Treillis        ArduinoUno
+--------        ----------
+SDA             Analog4
+SCL             Analog5
+GND             GND
+5V              5V
+Init            Analog2
+
