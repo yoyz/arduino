@@ -19,7 +19,7 @@
 #
 # Original Arduino adaptation by mellis, eighthave, oli.keller
 #
-# Current version: 1.5.2
+# Current version: 1.6.0
 #
 # Refer to HISTORY.md file for complete history of changes
 #
@@ -62,20 +62,23 @@
 #   AVR_TOOLS_DIR = /usr
 #
 # On Windows declare this environmental variables using the windows
-# configuration options. Control Panel > System > Advanced system settings
-# Also take into account that when you set them you have to add '\' on
-# all spaces and special characters.
-# ARDUINO_DIR and AVR_TOOLS_DIR have to be relative and not absolute.
-# This are just examples, you have to adapt this variables accordingly to
-# your system.
+# configuration options or Cygwin .bashrc. Control Panel > System > Advanced system settings
+# The paths must use Unix style forward slash and not have any spaces 
+# or escape charactors. One must use a symbolic link if the path does
+# contain spaces.
 #
-#   ARDUINO_DIR   =../../../../../Arduino
-#   AVR_TOOLS_DIR =../../../../../Arduino/hardware/tools/avr
+# This are just examples, you have to adapt this variables accordingly to
+# your system. Note the difference between ARDMK_DIR, which can use /cygdrive/
+# and USER_LIB_PATH, which cannnot due to invoking with the build tools.
+# It is best practice to avoid cygdrive all together.
+#
+#   ARDUINO_DIR   = C:/Arduino
+#   AVR_TOOLS_DIR = C:/Arduino/hardware/tools/avr
 #   ARDMK_DIR     = /cygdrive/c/Users/"YourUser"/Arduino-Makefile
 #
 # On Windows it is highly recommended that you create a symbolic link directory
 # for avoiding using the normal directories name of windows such as
-# c:\Program Files (x86)\Arduino
+# C:\Program Files (x86)\Arduino
 # For this use the command mklink on the console.
 #
 #
@@ -364,9 +367,15 @@ ifndef ARDUINO_SKETCHBOOK
     ifneq ($(ARDUINO_SKETCHBOOK),)
         $(call show_config_variable,ARDUINO_SKETCHBOOK,[AUTODETECTED],(from arduino preferences file))
     else
-        ARDUINO_SKETCHBOOK := $(firstword \
-            $(call dir_if_exists,$(HOME)/sketchbook) \
-            $(call dir_if_exists,$(HOME)/Documents/Arduino) )
+        ifeq ($(CURRENT_OS), WINDOWS)
+            ARDUINO_SKETCHBOOK := $(firstword \
+            $(call dir_if_exists,$(USERPROFILE)/sketchbook) \
+            $(call dir_if_exists,$(USERPROFILE)/Documents/Arduino) )
+        else
+            ARDUINO_SKETCHBOOK := $(firstword \
+              $(call dir_if_exists,$(HOME)/sketchbook) \
+              $(call dir_if_exists,$(HOME)/Documents/Arduino) )
+        endif
         $(call show_config_variable,ARDUINO_SKETCHBOOK,[DEFAULT])
     endif
 else
@@ -628,8 +637,12 @@ ifeq ($(strip $(NO_CORE)),)
             USB_VID = $(call PARSE_BOARD,$(BOARD_TAG),build.vid)
         endif
 
+        # coping with 2-3 methods sparkfun use for usb.pid
         ifndef USB_PID
-            USB_PID = $(call PARSE_BOARD,$(BOARD_TAG),build.pid)
+            USB_PID := $(call PARSE_BOARD,$(BOARD_TAG),build.pid)
+            ifndef USB_PID
+                USB_PID := $(call PARSE_BOARD,$(BOARD_TAG),menu.(chip|cpu).$(BOARD_SUB).build.pid)
+            endif
         endif
     endif
 
@@ -740,13 +753,23 @@ ifndef RESET_CMD
 	endif
     ifneq ($(CATERINA),)
         ifneq (,$(findstring CYGWIN,$(shell uname -s)))
+          # confirm user is using default cygwin unix Python (which uses ttySx) and not Windows Python (which uses COMx)
+          ifeq ($(shell which python),/usr/bin/python)
             RESET_CMD = $(ARD_RESET_ARDUINO) --caterina $(ARD_RESET_OPTS) $(DEVICE_PATH)
+          else
+            RESET_CMD = $(ARD_RESET_ARDUINO) --caterina $(ARD_RESET_OPTS) $(call get_monitor_port)
+          endif
         else
             RESET_CMD = $(ARD_RESET_ARDUINO) --caterina $(ARD_RESET_OPTS) $(call get_monitor_port)
         endif
     else
         ifneq (,$(findstring CYGWIN,$(shell uname -s)))
+          # confirm user is using default cygwin unix Python (which uses ttySx) and not Windows Python (which uses COMx)
+          ifeq ($(shell which python),/usr/bin/python)
             RESET_CMD = $(ARD_RESET_ARDUINO) $(ARD_RESET_OPTS) $(DEVICE_PATH)
+          else
+            RESET_CMD = $(ARD_RESET_ARDUINO) $(ARD_RESET_OPTS) $(call get_monitor_port)
+          endif
         else
             RESET_CMD = $(ARD_RESET_ARDUINO) $(ARD_RESET_OPTS) $(call get_monitor_port)
         endif
@@ -1041,7 +1064,7 @@ endif
 
 ifndef CFLAGS_STD
     ifeq ($(shell expr $(CC_VERNUM) '>' 490), 1)
-        CFLAGS_STD      = -std=gnu11 -flto -fno-fat-lto-objects
+        CFLAGS_STD      = -std=gnu11
     else
         CFLAGS_STD        =
     endif
@@ -1052,7 +1075,7 @@ endif
 
 ifndef CXXFLAGS_STD
     ifeq ($(shell expr $(CC_VERNUM) '>' 490), 1)
-        CXXFLAGS_STD      = -std=gnu++11 -fno-threadsafe-statics -flto
+        CXXFLAGS_STD      = -std=gnu++11
     else
         CXXFLAGS_STD      =
     endif
@@ -1065,7 +1088,9 @@ CFLAGS        += $(CFLAGS_STD)
 CXXFLAGS      += -fpermissive -fno-exceptions $(CXXFLAGS_STD)
 ASFLAGS       += -x assembler-with-cpp
 ifeq ($(shell expr $(CC_VERNUM) '>' 490), 1)
-    ASFLAGS += -flto
+    ASFLAGS  += -flto
+    CXXFLAGS += -fno-threadsafe-statics -flto -fno-devirtualize -fdiagnostics-color
+    CFLAGS   += -flto -fno-fat-lto-objects -fdiagnostics-color
 endif
 LDFLAGS       += -$(MCU_FLAG_NAME)=$(MCU) -Wl,--gc-sections -O$(OPTIMIZATION_LEVEL)
 ifeq ($(shell expr $(CC_VERNUM) '>' 490), 1)
@@ -1160,7 +1185,7 @@ endif
 
 ########################################################################
 # Tools version info
-ARDMK_VERSION = 1.5
+ARDMK_VERSION = 1.6
 $(call show_config_variable,ARDMK_VERSION,[COMPUTED])
 
 CC_VERSION := $(shell $(CC) -dumpversion)
@@ -1302,6 +1327,22 @@ $(OBJDIR)/%.lss: $(OBJDIR)/%.elf $(COMMON_DEPS)
 $(OBJDIR)/%.sym: $(OBJDIR)/%.elf $(COMMON_DEPS)
 	@$(MKDIR) $(dir $@)
 	$(NM) --size-sort --demangle --reverse-sort --line-numbers $< > $@
+
+########################################################################
+# Ctags
+
+# Assume ctags is on path unless has been specified
+ifndef CTAGS_EXEC
+    CTAGS_EXEC = ctags
+endif
+
+# Default to 'tags' unless user has specified a tags file
+ifndef TAGS_FILE
+    TAGS_FILE = tags
+endif
+
+# ctags command: append, flags unsort (as will be sorted after) and specify filename
+CTAGS_CMD = $(CTAGS_EXEC) $(CTAGS_OPTS) -auf
 
 ########################################################################
 # Avrdude
@@ -1525,15 +1566,15 @@ show_submenu:
 	@$(CAT) $(BOARDS_TXT) | grep -E '[a-zA-Z0-9_\-]+.menu.(cpu|chip).[a-zA-Z0-9_\-]+=' | sort -uf | sed 's/.menu.\(cpu\|chip\)./:/' | sed 's/=/:/' | column -s: -t
 
 monitor:
-ifeq ($(MONITOR_CMD), 'putty')
+ifeq ($(notdir $(MONITOR_CMD)), putty)
 	ifneq ($(strip $(MONITOR_PARAMS)),)
 	$(MONITOR_CMD) -serial -sercfg $(MONITOR_BAUDRATE),$(MONITOR_PARAMS) $(call get_monitor_port)
 	else
 	$(MONITOR_CMD) -serial -sercfg $(MONITOR_BAUDRATE) $(call get_monitor_port)
 	endif
-else ifeq ($(MONITOR_CMD), picocom)
+else ifeq ($(notdir $(MONITOR_CMD)), picocom)
 		$(MONITOR_CMD) -b $(MONITOR_BAUDRATE) $(MONITOR_PARAMS) $(call get_monitor_port)
-else ifeq ($(MONITOR_CMD), cu)
+else ifeq ($(notdir $(MONITOR_CMD)), cu)
 		$(MONITOR_CMD) -l $(call get_monitor_port) -s $(MONITOR_BAUDRATE)
 else
 		$(MONITOR_CMD) $(call get_monitor_port) $(MONITOR_BAUDRATE)
@@ -1557,6 +1598,23 @@ generate_assembly: $(OBJDIR)/$(TARGET).s
 
 generated_assembly: generate_assembly
 		@$(ECHO) "\"generated_assembly\" target is deprecated. Use \"generate_assembly\" target instead\n\n"
+
+.PHONY: tags
+tags:
+ifneq ($(words $(wildcard $(TAGS_FILE))), 0)
+	rm -f $(TAGS_FILE)
+endif
+	@$(ECHO) "Generating tags for local sources (INO an PDE files as C++): "
+	$(CTAGS_CMD) $(TAGS_FILE) --langmap=c++:.ino --langmap=c++:.pde $(LOCAL_SRCS)
+ifneq ($(words $(ARDUINO_LIBS)), 0)
+		@$(ECHO) "Generating tags for project libraries: "
+		$(CTAGS_CMD) $(TAGS_FILE) $(foreach lib, $(ARDUINO_LIBS),$(USER_LIB_PATH)/$(lib)/*)
+endif
+	@$(ECHO) "Generating tags for Arduino core: "
+	$(CTAGS_CMD) $(TAGS_FILE) $(ARDUINO_CORE_PATH)/*
+	@$(ECHO) "Sorting..\n"
+	@sort $(TAGS_FILE) -o $(TAGS_FILE)
+	@$(ECHO) "Tag file generation complete, output: $(TAGS_FILE)\n"
 
 help_vars:
 		@$(CAT) $(ARDMK_DIR)/arduino-mk-vars.md
@@ -1589,6 +1647,7 @@ help:
                            generated assembly of the main sketch.\n\
   make burn_bootloader   - burn bootloader and fuses\n\
   make set_fuses         - set fuses without burning bootloader\n\
+  make tags              - generate tags file including project libs and Arduino core\n\
   make help_vars         - print all variables that can be overridden\n\
   make help              - show this help\n\
 "

@@ -14,7 +14,7 @@ runscript_if_exists =                                                          \
 
 # For message printing: pad the right side of the first argument with spaces to
 # the number of bytes indicated by the second argument.
-space_pad_to = $(shell echo $(1) "                                                      " | head -c$(2))
+space_pad_to = $(shell echo "$(1)                                                       " | head -c$(2))
 
 # Call with some text, and a prefix tag if desired (like [AUTODETECTED]),
 show_config_info = $(call arduino_output,- $(call space_pad_to,$(2),20) $(1))
@@ -81,7 +81,7 @@ else
 endif
 
 ifeq ($(CURRENT_OS),WINDOWS)
-    ifneq ($(shell echo $(ARDUINO_DIR) | egrep '^(/|[a-zA-Z]:\\)'),)
-        echo $(error On Windows, ARDUINO_DIR must be a relative path)
+		ifneq ($(shell echo $(ARDUINO_DIR) | egrep '\\|[[:space:]]|cygdrive'),)
+        echo $(error On Windows, ARDUINO_DIR and other defines must use forward slash and not contain spaces, special characters or be cygdrive relative)
     endif
 endif
